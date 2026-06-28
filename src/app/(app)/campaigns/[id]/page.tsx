@@ -8,6 +8,7 @@ import { SYSTEM_LABELS } from "@/lib/systems"
 import { CampaignInvite } from "./campaign-invite"
 import { MembersList } from "./members-list"
 import { SessionsList } from "./sessions-list"
+import { CampaignShop } from "./campaign-shop"
 
 export default async function CampaignPage({
   params,
@@ -73,6 +74,7 @@ export default async function CampaignPage({
           <TabsTrigger value="sessions">
             Sessões ({campaign.sessions.length})
           </TabsTrigger>
+          <TabsTrigger value="shop">Mercado</TabsTrigger>
           {isGm && <TabsTrigger value="invite">Convite</TabsTrigger>}
         </TabsList>
 
@@ -89,6 +91,16 @@ export default async function CampaignPage({
             campaignId={campaign.id}
             sessions={campaign.sessions}
             isGm={isGm}
+          />
+        </TabsContent>
+
+        <TabsContent value="shop" className="pt-4">
+          <CampaignShop
+            campaignId={campaign.id}
+            system={campaign.system}
+            isGm={isGm}
+            initialEnabled={campaign.shopEnabled}
+            initialConfig={(campaign.shopConfig as { disabled: string[]; overrides: Record<string, { price?: number }> }) ?? { disabled: [], overrides: {} }}
           />
         </TabsContent>
 
