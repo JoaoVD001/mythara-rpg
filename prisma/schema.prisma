@@ -9,16 +9,34 @@ datasource db {
 }
 
 model User {
-  id             String           @id @default(cuid())
-  name           String
-  email          String           @unique
-  password       String?
-  image          String?
-  emailVerified  DateTime?
-  createdAt      DateTime         @default(now())
-  characters     Character[]
-  ownedCampaigns Campaign[]       @relation("CampaignOwner")
-  memberships    CampaignMember[]
+  id               String           @id @default(cuid())
+  name             String
+  username         String?          @unique
+  bio              String?
+  email            String           @unique
+  password         String?
+  image            String?
+  emailVerified    DateTime?
+  createdAt        DateTime         @default(now())
+  characters       Character[]
+  ownedCampaigns   Campaign[]       @relation("CampaignOwner")
+  memberships      CampaignMember[]
+  sentRequests     Friendship[]     @relation("SentRequests")
+  receivedRequests Friendship[]     @relation("ReceivedRequests")
+  sentInvites      CampaignInvite[] @relation("SentInvites")
+  receivedInvites  CampaignInvite[] @relation("ReceivedInvites")
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  fromId    String
+  toId      String
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  from      User     @relation("SentRequests",     fields: [fromId], references: [id], onDelete: Cascade)
+  to        User     @relation("ReceivedRequests", fields: [toId],   references: [id], onDelete: Cascade)
+
+  @@unique([fromId, toId])
 }
 
 model EmailVerificationToken {
@@ -63,6 +81,7 @@ model Campaign {
   owner       User             @relation("CampaignOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   members     CampaignMember[]
   sessions    GameSession[]
+  invites     CampaignInvite[]
 }
 
 model CampaignMember {
@@ -77,6 +96,21 @@ model CampaignMember {
   character   Character? @relation(fields: [characterId], references: [id])
 
   @@unique([userId, campaignId])
+}
+
+model CampaignInvite {
+  id         String   @id @default(cuid())
+  campaignId String
+  fromId     String
+  toId       String
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  from     User     @relation("SentInvites",     fields: [fromId], references: [id], onDelete: Cascade)
+  to       User     @relation("ReceivedInvites", fields: [toId],   references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, toId])
 }
 
 model GameSession {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Geist, Cinzel, Cinzel_Decorative } from "next/font/google"
+import { Geist, Cinzel, Cinzel_Decorative, Press_Start_2P } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/sonner"
 import { SessionProvider } from "next-auth/react"
@@ -21,6 +21,12 @@ const cinzelDecorative = Cinzel_Decorative({
   weight: ["400", "700", "900"],
 })
 
+const pressStart2P = Press_Start_2P({
+  variable: "--font-pixel",
+  subsets: ["latin"],
+  weight: "400",
+})
+
 export const metadata: Metadata = {
   title: "Mythara RPG",
   description: "Plataforma de RPG online — fichas e campanhas",
@@ -32,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="pt-BR" className={`${geist.variable} ${cinzel.variable} ${cinzelDecorative.variable} h-full antialiased dark`}>
+    <html lang="pt-BR" className={`${geist.variable} ${cinzel.variable} ${cinzelDecorative.variable} ${pressStart2P.variable} h-full antialiased dark`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <SessionProvider>
           {children}

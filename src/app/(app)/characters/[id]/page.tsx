@@ -39,25 +39,31 @@ export default async function CharacterPage({
         : defaultDnD5eData()
   }
 
+  const isOP = character.system === "ordem-paranormal"
+
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{character.name}</h1>
-          <Badge variant="secondary" className="mt-1">
-            {SYSTEM_LABELS[character.system] ?? character.system}
-          </Badge>
-        </div>
-        <DeleteCharacterButton characterId={character.id} />
-      </div>
+      {!isOP && (
+        <>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold">{character.name}</h1>
+              <Badge variant="secondary" className="mt-1">
+                {SYSTEM_LABELS[character.system] ?? character.system}
+              </Badge>
+            </div>
+            <DeleteCharacterButton characterId={character.id} />
+          </div>
+          <Separator />
+        </>
+      )}
 
-      <Separator />
-
-      {character.system === "ordem-paranormal" ? (
+      {isOP ? (
         <OrdemParanormalSheet
           characterId={character.id}
           characterName={character.name}
           initialData={data as OrdemParanormalData}
+          deleteButton={<DeleteCharacterButton characterId={character.id} />}
         />
       ) : (
         <DnD5eSheet

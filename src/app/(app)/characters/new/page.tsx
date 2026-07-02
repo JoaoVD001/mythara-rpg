@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 import { toast } from "sonner"
 import { ChevronDown, ChevronUp, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -11,7 +12,9 @@ import { Textarea } from "@/components/ui/textarea"
 import {
   ORDEM_PARANORMAL_BOOKS,
   ORDEM_PARANORMAL_CLASSES_DATA,
+  gameIconUrl,
   defaultOrdemParanormalData,
+  calcOPStats,
   type OPOrigin,
   type OPClass,
 } from "@/lib/systems"
@@ -272,6 +275,7 @@ function StepOrigin({ selected, onSelect }: { selected: string; onSelect: (id: s
                 src={book.coverImage}
                 alt={book.name}
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
               />
               {activeBookId === book.id && (
                 <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-lg">
@@ -438,10 +442,14 @@ function StepFinal({ data, onChange }: { data: FinalData; onChange: (d: FinalDat
   )
 }
 
+// ─── Step 5: Equipamentos ────────────────────────────────────────────────────
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 
-export default function NewCharacterPage() {
+function NewCharacterPageInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const returnTo = searchParams.get("returnTo")
   const [step, setStep] = useState<Step>("attributes")
   const [loading, setLoading] = useState(false)
 
@@ -458,6 +466,8 @@ export default function NewCharacterPage() {
   })
 
   const stepIdx = STEPS.findIndex((s) => s.key === step)
+
+  const selectedOrigin = ORDEM_PARANORMAL_BOOKS.flatMap((b) => b.origins).find((o) => o.id === originId)
 
   function canAdvance() {
     if (step === "attributes") {
@@ -484,21 +494,46 @@ export default function NewCharacterPage() {
       return
     }
 
-    const origin = ORDEM_PARANORMAL_BOOKS.flatMap((b) => b.origins).find((o) => o.id === originId)
+    const origin = selectedOrigin
     const cls = ORDEM_PARANORMAL_CLASSES_DATA.find((c) => c.id === classId)
 
     const baseData = defaultOrdemParanormalData()
+
+    const partialData = {
+      nex: "5",
+      class: cls?.name ?? "Combatente",
+      str: String(attrs.str),
+      dex: String(attrs.dex),
+      int: String(attrs.int),
+      pres: String(attrs.pres),
+      vig: String(attrs.vig),
+    }
+    const computed = calcOPStats(partialData)
+
+    const grantedSkills = origin?.grantedSkills ?? []
+    const skillsObj = Object.fromEntries(grantedSkills.map((s) => [s, { treino: 5, outros: 0 }]))
+
     const characterData = {
       ...baseData,
       playerName: finalData.playerName,
       age: finalData.age,
       origin: origin?.name ?? "",
+      originId: origin?.id ?? "",
       class: cls?.name ?? "",
       str: String(attrs.str),
       dex: String(attrs.dex),
       int: String(attrs.int),
       pres: String(attrs.pres),
       vig: String(attrs.vig),
+      hp:         String(computed.pvMax),
+      hpMax:      String(computed.pvMax),
+      pe:         String(computed.peMax),
+      peMax:      String(computed.peMax),
+      sanity:     String(computed.sanMax),
+      sanityMax:  String(computed.sanMax),
+      pd:         String(computed.pdTurno),
+      dinheiro: "0",
+      inventoryItems: "[]",
       notes: [
         finalData.appearance && `**Aparência:** ${finalData.appearance}`,
         finalData.personality && `**Personalidade:** ${finalData.personality}`,
@@ -506,9 +541,7 @@ export default function NewCharacterPage() {
       ]
         .filter(Boolean)
         .join("\n\n"),
-      skills: origin
-        ? JSON.stringify(Object.fromEntries(origin.grantedSkills.map((s) => [s, true])))
-        : JSON.stringify({}),
+      skills: JSON.stringify(skillsObj),
     }
 
     setLoading(true)
@@ -531,7 +564,11 @@ export default function NewCharacterPage() {
 
     const character = await res.json()
     toast.success("Ficha criada!")
-    router.push(`/characters/${character.id}`)
+    if (returnTo) {
+      router.push(decodeURIComponent(returnTo))
+    } else {
+      router.push(`/characters/${character.id}`)
+    }
   }
 
   return (
@@ -561,5 +598,13 @@ export default function NewCharacterPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function NewCharacterPage() {
+  return (
+    <Suspense>
+      <NewCharacterPageInner />
+    </Suspense>
   )
 }

@@ -7,6 +7,7 @@ import { Plus, Sword, Users, ChevronRight } from "lucide-react"
 import { SYSTEM_LABELS } from "@/lib/systems"
 import { redirect } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { PendingInvites } from "@/app/(app)/campaigns/pending-invites"
 
 const systemStyles: Record<string, string> = {
   "ordem-paranormal":
@@ -58,6 +59,8 @@ export default async function DashboardPage() {
           Seus personagens e campanhas recentes.
         </p>
       </div>
+
+      <PendingInvites />
 
       {/* Fichas */}
       <section className="space-y-4">

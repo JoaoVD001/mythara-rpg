@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
-import { Sword, Users, LayoutDashboard, LogOut, User } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Sword, Users, LayoutDashboard, LogOut, UserPlus, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -20,6 +21,61 @@ const navLinks = [
   { href: "/characters", label: "Fichas", icon: Sword },
   { href: "/campaigns", label: "Campanhas", icon: Users },
 ]
+
+function FriendRequestsBadge() {
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    let cancelled = false
+    async function poll() {
+      const res = await fetch("/api/friends/requests")
+      if (!cancelled && res.ok) {
+        const data = await res.json()
+        setCount(Array.isArray(data) ? data.length : 0)
+      }
+    }
+    poll()
+    const interval = setInterval(poll, 30_000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [])
+
+  return (
+    <Link href="/friends"
+      className="relative flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+      aria-label="Amigos">
+      <UserPlus className="h-4 w-4" />
+      {count > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[9px] font-bold rounded-full h-4 min-w-4 flex items-center justify-center px-1 leading-none">
+          {count > 9 ? "9+" : count}
+        </span>
+      )}
+    </Link>
+  )
+}
+
+function CampaignInvitesBadge() {
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    let cancelled = false
+    async function poll() {
+      const res = await fetch("/api/campaigns/invites")
+      if (!cancelled && res.ok) {
+        const data = await res.json()
+        setCount(Array.isArray(data) ? data.length : 0)
+      }
+    }
+    poll()
+    const interval = setInterval(poll, 30_000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [])
+
+  if (count === 0) return null
+
+  return (
+    <span className="absolute -top-0.5 -right-0.5 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full h-4 min-w-4 flex items-center justify-center px-1 leading-none pointer-events-none">
+      {count > 9 ? "9+" : count}
+    </span>
+  )
+}
 
 export function Navbar() {
   const pathname = usePathname()
@@ -50,7 +106,7 @@ export function Navbar() {
                   key={href}
                   href={href}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-all duration-150",
+                    "relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-all duration-150",
                     isActive
                       ? "bg-primary/15 text-primary border border-primary/25 font-medium"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent"
@@ -58,13 +114,16 @@ export function Navbar() {
                 >
                   <Icon className="h-4 w-4" />
                   {label}
+                  {href === "/campaigns" && <CampaignInvitesBadge />}
                 </Link>
               )
             })}
           </nav>
         </div>
 
-        <DropdownMenu>
+        <div className="flex items-center gap-1">
+          {session?.user && <FriendRequestsBadge />}
+          <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
@@ -85,9 +144,9 @@ export function Navbar() {
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/profile">
-                <User className="mr-2 h-4 w-4" />
-                Perfil
+              <Link href="/settings/profile">
+                <Settings className="mr-2 h-4 w-4" />
+                Configurações
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -100,6 +159,7 @@ export function Navbar() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       </div>
     </header>
   )
